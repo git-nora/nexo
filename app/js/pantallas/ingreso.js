@@ -15,6 +15,7 @@ export const PantallaIngreso = {
     const datos = reactive({ mail: '', clave: '', codigo: '', nombre: '' });
     const error = ref('');
     const aviso = ref('');
+    const verClave = ref(false);            // el ojito muestra u oculta la contraseña
     const esRegistro = computed(() => modo.value === 'registro');
 
     function cambiarModo(m) { modo.value = m; error.value = ''; aviso.value = ''; }
@@ -45,7 +46,7 @@ export const PantallaIngreso = {
         : 'Escribí tu mail arriba y volvé a tocar «¿Olvidaste tu contraseña?».';
     }
 
-    return { modo, datos, error, aviso, esRegistro, cambiarModo, entrar, olvideClave };
+    return { modo, datos, error, aviso, verClave, esRegistro, cambiarModo, entrar, olvideClave };
   },
   template: `
     <div class="pantalla">
@@ -76,8 +77,14 @@ export const PantallaIngreso = {
         </div>
         <div class="campo">
           <label for="clave">Contraseña</label>
-          <input id="clave" type="password" :autocomplete="esRegistro ? 'new-password' : 'current-password'"
-                 placeholder="Mínimo 8 caracteres" v-model="datos.clave">
+          <div class="campo-clave">
+            <input id="clave" :type="verClave ? 'text' : 'password'" :autocomplete="esRegistro ? 'new-password' : 'current-password'"
+                   placeholder="Mínimo 8 caracteres" v-model="datos.clave">
+            <button type="button" class="ver-clave" @click="verClave = !verClave"
+                    :aria-label="verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'" :aria-pressed="verClave ? 'true' : 'false'">
+              <icono :nombre="verClave ? 'ojoTachado' : 'ojo'" :tam="22" />
+            </button>
+          </div>
         </div>
         <template v-if="esRegistro">
           <div class="campo">
