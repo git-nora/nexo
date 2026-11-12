@@ -38,7 +38,7 @@ export const PantallaIngreso = {
     }
 
     async function entrar() {
-      error.value = validar(); aviso.value = '';
+      error.value = validar(); aviso.value = ''; estado.avisoIngreso = '';
       if (error.value || ocupado.value) return;
       ocupado.value = true;
       try {
@@ -131,6 +131,7 @@ export const PantallaIngreso = {
             <span class="ayuda">Así aparece tu nombre en NEXO. Lo podés cambiar en Ajustes.</span>
           </div>
         </template>
+        <p v-if="estado.avisoIngreso" class="error" role="alert">{{ estado.avisoIngreso }}</p>
         <p v-if="error" class="error" role="alert">{{ error }}</p>
         <p v-if="aviso" class="aviso-ok" role="status">{{ aviso }}</p>
         <button type="submit" class="boton-primario" :disabled="ocupado" :aria-busy="ocupado ? 'true' : 'false'">

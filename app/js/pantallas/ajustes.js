@@ -1,15 +1,15 @@
 // Ajustes: dispositivo, aviso por inactividad, tema y cuenta.
 import { Icono } from '../iconos.js';
-import { Interruptor } from '../componentes/comunes.js';
+import { Interruptor, HojaInferior } from '../componentes/comunes.js';
 import { estado } from '../datos-ejemplo.js';
 import { tema, cambiarTema } from '../tema.js';
-import { cambiarMiNombre, cambiarNombreAdultoMayor, guardarAjustes, cerrarSesion as salirDeFirebase, mensajeDeError } from '../firebase.js';
+import { cambiarMiNombre, cambiarNombreAdultoMayor, guardarAjustes, borrarTodosLosMensajes, borrarHistorial, cerrarSesion as salirDeFirebase, mensajeDeError } from '../firebase.js';
 
 const { ref } = Vue;
 
 export const PantallaAjustes = {
   name: 'PantallaAjustes',
-  components: { Icono, Interruptor },
+  components: { Icono, Interruptor, HojaInferior },
   setup() {
     const editandoNombre = ref(false);
     const nombreNuevo = ref('');
@@ -45,12 +45,37 @@ export const PantallaAjustes = {
     }
     // Paso 1: simula la conexión. En el paso 4 abre el bot de Telegram de NEXO.
     function conectarTelegram() { estado.usuario.telegram = !estado.usuario.telegram; }
+    // Borrar (solo quien administra): 'mensajes' o 'historial'. Primero se confirma.
+    const aBorrar = ref('');
+    const borrando = ref(false);
+    const aviso = ref('');
+    const cantidad = (que) => que === 'mensajes'
+      ? estado.mensajes.length
+      : estado.mensajes.length + estado.alertas.length + estado.tomas.length;
+    function plural(n, uno, varios) { return n + ' ' + (n === 1 ? uno : varios); }
+    const detalleBorrado = () => aBorrar.value === 'mensajes'
+      ? plural(estado.mensajes.length, 'mensaje', 'mensajes')
+      : [plural(estado.mensajes.length, 'mensaje', 'mensajes'), plural(estado.alertas.length, 'alerta', 'alertas'),
+         plural(estado.tomas.length, 'registro de toma', 'registros de tomas')].join(', ');
+    function pedirBorrar(que) { aviso.value = ''; error.value = ''; aBorrar.value = que; }
+    async function confirmarBorrar() {
+      if (borrando.value) return;
+      borrando.value = true;
+      const que = aBorrar.value;
+      try {
+        if (que === 'mensajes') await borrarTodosLosMensajes(); else await borrarHistorial();
+        aviso.value = que === 'mensajes' ? 'Listo: se borraron todos los mensajes.' : 'Listo: se borró el historial.';
+      } catch (e) { error.value = mensajeDeError(e); }
+      finally { borrando.value = false; aBorrar.value = ''; }
+    }
+
     async function cerrarSesion() {
       try { await salirDeFirebase(); } catch (e) { error.value = mensajeDeError(e); }   // app.js lleva a ingreso
     }
 
     return { estado, tema, cambiarTema, cambiarHoras, ajustar, editandoNombre, nombreNuevo, empezarNombre, guardarNombre,
-             editandoAdulto, adultoNuevo, empezarAdulto, guardarAdulto, error, conectarTelegram, cerrarSesion };
+             editandoAdulto, adultoNuevo, empezarAdulto, guardarAdulto, error, conectarTelegram, cerrarSesion,
+             aBorrar, borrando, aviso, cantidad, detalleBorrado, pedirBorrar, confirmarBorrar };
   },
   template: `
     <div class="pantalla">
@@ -141,6 +166,37 @@ export const PantallaAjustes = {
         </div>
         <button type="button" class="boton-texto boton-peligro" style="width: 100%; min-height: 52px" @click="cerrarSesion">Cerrar sesión</button>
       </div>
+      <template v-if="estado.usuario.admin">
+        <div class="etiqueta-seccion">Historial (solo quien administra)</div>
+        <div class="lista">
+          <div class="fila">
+            <div class="texto">
+              <span class="titulo" style="font-weight: 600">Borrar todos los mensajes</span>
+              <span class="detalle">Vacía el chat para toda la familia y en NEXO</span>
+            </div>
+            <button type="button" class="boton-texto boton-peligro" :disabled="!cantidad('mensajes')" @click="pedirBorrar('mensajes')">Borrar</button>
+          </div>
+          <div class="fila">
+            <div class="texto">
+              <span class="titulo" style="font-weight: 600">Borrar todo el historial</span>
+              <span class="detalle">Mensajes, alertas y registro de tomas. No toca medicación, cumpleaños ni integrantes.</span>
+            </div>
+            <button type="button" class="boton-texto boton-peligro" :disabled="!cantidad('historial')" @click="pedirBorrar('historial')">Borrar</button>
+          </div>
+        </div>
+        <p v-if="aviso" class="aviso-ok" role="status">{{ aviso }}</p>
+      </template>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
+
+      <hoja-inferior v-if="aBorrar" :titulo="aBorrar === 'mensajes' ? '¿Borrar todos los mensajes?' : '¿Borrar todo el historial?'" @cerrar="aBorrar = ''">
+        <div class="formulario">
+          <p style="margin: 0">Se van a borrar <b>{{ detalleBorrado() }}</b> para toda la familia.</p>
+          <p class="error" style="margin: 0">No se puede deshacer: después no hay forma de recuperarlos.</p>
+          <button type="button" class="boton-primario" style="background: var(--rojo)" :disabled="borrando" @click="confirmarBorrar">
+            {{ borrando ? 'Borrando…' : 'Sí, borrar' }}
+          </button>
+          <button type="button" class="boton-texto" @click="aBorrar = ''">Cancelar</button>
+        </div>
+      </hoja-inferior>
     </div>`
 };

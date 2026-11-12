@@ -1,21 +1,35 @@
 // Familia: código para sumar familiares, integrantes y permisos.
 // Solo el administrador ve y cambia los permisos de edición.
 import { Icono } from '../iconos.js';
-import { Interruptor } from '../componentes/comunes.js';
+import { Interruptor, HojaInferior } from '../componentes/comunes.js';
 import { estado } from '../datos-ejemplo.js';
-import { cambiarPermiso, mensajeDeError } from '../firebase.js';
+import { cambiarPermiso, quitarMiembro, permitirVolver, mensajeDeError } from '../firebase.js';
 
 const { ref } = Vue;
 
 export const PantallaFamilia = {
   name: 'PantallaFamilia',
-  components: { Icono, Interruptor },
+  components: { Icono, Interruptor, HojaInferior },
   setup() {
     const copiado = ref('');
     const error = ref('');
     async function permiso(m, valor) {
       error.value = '';
       try { await cambiarPermiso(m.id, valor); } catch (e) { error.value = mensajeDeError(e); }
+    }
+    // Quitar a alguien: primero se confirma en una hoja abajo
+    const aQuitar = ref(null);
+    const ocupado = ref(false);
+    async function confirmarQuitar() {
+      if (ocupado.value) return;
+      ocupado.value = true; error.value = '';
+      try { await quitarMiembro(aQuitar.value); aQuitar.value = null; }
+      catch (e) { error.value = mensajeDeError(e); aQuitar.value = null; }
+      finally { ocupado.value = false; }
+    }
+    async function dejarVolver(b) {
+      error.value = '';
+      try { await permitirVolver(b.id); } catch (e) { error.value = mensajeDeError(e); }
     }
     async function compartir() {
       const de = estado.familia.adultoMayor ? ' de ' + estado.familia.adultoMayor : '';
@@ -27,7 +41,7 @@ export const PantallaFamilia = {
         copiado.value = 'No se pudo copiar solo. Anotá el código: ' + estado.familia.codigo;
       }
     }
-    return { estado, copiado, error, permiso, compartir };
+    return { estado, copiado, error, permiso, compartir, aQuitar, ocupado, confirmarQuitar, dejarVolver };
   },
   template: `
     <div class="pantalla">
@@ -62,13 +76,39 @@ export const PantallaFamilia = {
             <interruptor :model-value="!!m.puedeEditar" @update:model-value="(v) => permiso(m, v)"
                          :etiqueta="'Permitir a ' + m.nombre + ' editar medicación y cumpleaños'" />
           </div>
+          <button v-if="estado.usuario.admin && !m.admin" type="button" class="boton-texto boton-peligro"
+                  style="align-self: flex-start; padding-left: 52px" @click="aQuitar = m">Quitar de la familia</button>
         </div>
       </div>
+      <template v-if="estado.usuario.admin && estado.bloqueados.length">
+        <h2 class="seccion">Quitados de la familia</h2>
+        <div class="lista">
+          <div v-for="b in estado.bloqueados" :key="b.id" class="fila">
+            <div class="texto">
+              <span class="titulo" style="font-weight: 600">{{ b.nombre }}</span>
+              <span class="detalle">No puede volver a sumarse con el código</span>
+            </div>
+            <button type="button" class="boton-texto" @click="dejarVolver(b)">Permitir volver</button>
+          </div>
+        </div>
+      </template>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
       <p v-if="estado.miembros.length === 1" class="nota">Por ahora sos la única persona. Compartí el código para que se sumen.</p>
       <p class="nota">
         <template v-if="estado.usuario.admin">Solo vos, como quien administra, ves los permisos. </template>
         El color es el que usa cada nombre en NEXO. Para recibir avisos urgentes, cada familiar conecta su Telegram desde Ajustes.
       </p>
+
+      <hoja-inferior v-if="aQuitar" :titulo="'¿Quitar a ' + aQuitar.nombre + '?'" @cerrar="aQuitar = null">
+        <div class="formulario">
+          <p style="margin: 0">{{ aQuitar.nombre }} deja de ver los mensajes, la medicación y los avisos de esta familia,
+            y no va a poder volver a sumarse con el código hasta que vos lo permitas.</p>
+          <p class="nota" style="margin: 0">Los mensajes que mandó quedan en el chat.</p>
+          <button type="button" class="boton-primario" style="background: var(--rojo)" :disabled="ocupado" @click="confirmarQuitar">
+            {{ ocupado ? 'Quitando…' : 'Sí, quitar a ' + aQuitar.nombre }}
+          </button>
+          <button type="button" class="boton-texto" @click="aQuitar = null">Cancelar</button>
+        </div>
+      </hoja-inferior>
     </div>`
 };
