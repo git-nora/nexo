@@ -55,7 +55,7 @@
         },
         "miembros": {
           "$uid": {
-            ".write": "auth != null && (auth.uid === $uid || root.child('familias').child($fid).child('info').child('admin').val() === auth.uid)",
+            ".write": "auth != null && (newData.exists() || $uid !== root.child('familias').child($fid).child('info').child('admin').val()) && ((auth.uid === $uid && !root.child('familias').child($fid).child('bloqueados').child(auth.uid).exists()) || root.child('familias').child($fid).child('info').child('admin').val() === auth.uid)",
             ".validate": "newData.hasChildren(['nombre', 'admin', 'puedeEditar'])",
             "nombre": {
               ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30"
@@ -130,6 +130,7 @@
           }
         },
         "mensajes": {
+          ".write": "auth != null && root.child('familias').child($fid).child('info').child('admin').val() === auth.uid && !newData.exists()",
           "$id": {
             ".write": "(auth != null && root.child('familias').child($fid).child('miembros').child(auth.uid).exists() && ((!data.exists() && newData.child('autor').val() === auth.uid) || (data.exists() && !newData.exists() && (data.child('autor').val() === auth.uid || root.child('familias').child($fid).child('info').child('admin').val() === auth.uid)) || (data.exists() && newData.exists()))) || (auth != null && root.child('familias').child($fid).child('info').child('dispositivo').val() === auth.uid)",
             ".validate": "newData.hasChildren(['autor', 'duracion', 'creado', 'escuchado']) && (!data.exists() || (newData.child('autor').val() === data.child('autor').val() && newData.child('creado').val() === data.child('creado').val() && newData.child('duracion').val() === data.child('duracion').val() && newData.child('audio').val() === data.child('audio').val()))",
@@ -154,6 +155,7 @@
           }
         },
         "alertas": {
+          ".write": "auth != null && root.child('familias').child($fid).child('info').child('admin').val() === auth.uid && !newData.exists()",
           "$id": {
             ".write": "(auth != null && root.child('familias').child($fid).child('info').child('dispositivo').val() === auth.uid) || (auth != null && root.child('familias').child($fid).child('miembros').child(auth.uid).exists() && data.exists() && !newData.exists())",
             ".validate": "newData.hasChildren(['tipo', 'creado'])",
@@ -172,6 +174,7 @@
           }
         },
         "tomas": {
+          ".write": "auth != null && root.child('familias').child($fid).child('info').child('admin').val() === auth.uid && !newData.exists()",
           "$id": {
             ".write": "auth != null && root.child('familias').child($fid).child('info').child('dispositivo').val() === auth.uid",
             ".validate": "newData.hasChildren(['remedio', 'programada', 'confirmada'])",
@@ -220,6 +223,12 @@
           },
           "$otro": {
             ".validate": "false"
+          }
+        },
+        "bloqueados": {
+          ".write": "auth != null && root.child('familias').child($fid).child('info').child('admin').val() === auth.uid",
+          "$uid": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30"
           }
         },
         "$otro": {

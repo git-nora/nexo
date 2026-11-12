@@ -1,6 +1,6 @@
 // Service worker: guarda los archivos de la app para que abra rápido
 // y se pueda instalar en el celular. Los datos (Firebase) siempre van por internet.
-const VERSION = 'nexo-v4';
+const VERSION = 'nexo-v5';
 const ARCHIVOS = [
   './', 'index.html', 'manifest.webmanifest', 'css/estilos.css',
   'js/app.js', 'js/firebase.js', 'js/firebase-config.js', 'js/iconos.js', 'js/tema.js', 'js/datos-ejemplo.js', 'js/componentes/comunes.js',
