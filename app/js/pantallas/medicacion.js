@@ -2,7 +2,8 @@
 // Solo pueden agregar o editar el administrador y quienes él habilite.
 import { Icono } from '../iconos.js';
 import { HojaInferior } from '../componentes/comunes.js';
-import { estado, nuevoId, nombreAdulto, NOMBRES_DIAS } from '../datos-ejemplo.js';
+import { estado, nombreAdulto, dia, hora, NOMBRES_DIAS } from '../datos-ejemplo.js';
+import { guardarRemedio, borrarRemedio, mensajeDeError } from '../firebase.js';
 
 const { ref, reactive, computed } = Vue;
 
@@ -24,6 +25,7 @@ export const PantallaMedicacion = {
     const editando = ref(null);                 // remedio que se edita, o null si es nuevo
     const form = reactive({ nombre: '', dosis: '', horas: ['08:00'], dias: [0, 1, 2, 3, 4, 5, 6], aviso: 'ambos' });
     const error = ref('');
+    const guardando = ref(false);
 
     function abrir(r) {
       editando.value = r || null;
@@ -37,23 +39,29 @@ export const PantallaMedicacion = {
       const i = form.dias.indexOf(d);
       if (i >= 0) form.dias.splice(i, 1); else form.dias.push(d);
     }
-    function guardar() {
+    async function guardar() {
+      if (guardando.value) return;
       if (!form.nombre.trim()) { error.value = 'Escribí el nombre del remedio.'; return; }
       const horas = form.horas.filter(Boolean).sort();
       if (!horas.length) { error.value = 'Agregá al menos un horario.'; return; }
       if (!form.dias.length) { error.value = 'Elegí al menos un día.'; return; }
-      const datos = { nombre: form.nombre.trim(), dosis: form.dosis.trim(), horas, dias: [...form.dias], aviso: form.aviso };
-      if (editando.value) Object.assign(editando.value, datos);
-      else estado.remedios.push({ id: nuevoId(), ...datos });
-      abierta.value = false;
+      if (form.nombre.trim().length > 40) { error.value = 'El nombre puede tener hasta 40 letras.'; return; }
+      if (form.dosis.trim().length > 30) { error.value = 'La dosis puede tener hasta 30 letras.'; return; }
+      const datos = { nombre: form.nombre.trim(), dosis: form.dosis.trim(), horas: [...new Set(horas)], dias: [...form.dias].sort(), aviso: form.aviso };
+      guardando.value = true; error.value = '';
+      try {
+        await guardarRemedio(editando.value ? editando.value.id : null, datos);
+        abierta.value = false;
+      } catch (e) { error.value = mensajeDeError(e); }
+      finally { guardando.value = false; }
     }
-    function borrar() {
-      const i = estado.remedios.indexOf(editando.value);
-      if (i >= 0) estado.remedios.splice(i, 1);
-      abierta.value = false;
+    async function borrar() {
+      try { await borrarRemedio(editando.value.id); abierta.value = false; }
+      catch (e) { error.value = mensajeDeError(e); }
     }
+    const cuandoToma = (t) => dia(t.programada) + ' · ' + hora(t.programada);
 
-    return { estado, nombreAdulto, puedeEditar, abierta, editando, form, error, abrir, alternarDia, guardar, borrar, textoDias, TEXTO_AVISO, NOMBRES_DIAS };
+    return { estado, nombreAdulto, puedeEditar, guardando, cuandoToma, hora, abierta, editando, form, error, abrir, alternarDia, guardar, borrar, textoDias, TEXTO_AVISO, NOMBRES_DIAS };
   },
   template: `
     <div class="pantalla">
@@ -94,12 +102,13 @@ export const PantallaMedicacion = {
           </div>
           <div class="texto">
             <span class="titulo" style="font-weight: 600">{{ t.remedio }}</span>
-            <span class="detalle">{{ t.cuando }}</span>
+            <span class="detalle">{{ cuandoToma(t) }}</span>
           </div>
           <span style="font-size: 13px; font-weight: 700" :style="{ color: t.confirmada ? 'var(--verde)' : 'var(--naranja)' }">
-            {{ t.confirmada ? 'Tomada ' + t.horaConfirmada : 'Sin confirmar' }}
+            {{ t.confirmada ? 'Tomada ' + (t.horaConfirmada ? hora(t.horaConfirmada) : '') : 'Sin confirmar' }}
           </span>
         </div>
+        <div v-if="!estado.tomas.length" class="vacio">Todavía no hay tomas. NEXO las anota cuando suena cada aviso.</div>
       </div>
 
       <hoja-inferior v-if="abierta" :titulo="editando ? 'Editar remedio' : 'Nuevo remedio'" @cerrar="abierta = false">
@@ -141,7 +150,7 @@ export const PantallaMedicacion = {
             </div>
           </div>
           <p v-if="error" class="error" role="alert">{{ error }}</p>
-          <button type="submit" class="boton-primario">Guardar</button>
+          <button type="submit" class="boton-primario" :disabled="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
           <button v-if="editando" type="button" class="boton-texto boton-peligro" @click="borrar">Borrar este remedio</button>
         </form>
       </hoja-inferior>

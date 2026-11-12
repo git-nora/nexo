@@ -1,7 +1,8 @@
 // Cumpleaños: el próximo arriba, después familia y otras personas.
 import { Icono } from '../iconos.js';
 import { HojaInferior, Interruptor } from '../componentes/comunes.js';
-import { estado, nuevoId, nombreAdulto, NOMBRES_MESES } from '../datos-ejemplo.js';
+import { estado, nombreAdulto, NOMBRES_MESES } from '../datos-ejemplo.js';
+import { guardarCumple, borrarCumple, mensajeDeError } from '../firebase.js';
 
 const { ref, reactive, computed } = Vue;
 
@@ -29,6 +30,7 @@ export const PantallaCumpleanos = {
     const editando = ref(null);
     const form = reactive({ nombre: '', relacion: '', dia: 1, mes: 1, esFamilia: true });
     const error = ref('');
+    const guardando = ref(false);
 
     function abrir(c) {
       editando.value = c || null;
@@ -36,22 +38,26 @@ export const PantallaCumpleanos = {
       error.value = '';
       abierta.value = true;
     }
-    function guardar() {
+    async function guardar() {
+      if (guardando.value) return;
       if (!form.nombre.trim()) { error.value = 'Escribí el nombre.'; return; }
+      if (form.nombre.trim().length > 40 || form.relacion.trim().length > 40) { error.value = 'Nombre y relación pueden tener hasta 40 letras.'; return; }
       const maximo = new Date(2024, form.mes, 0).getDate();      // 2024 es bisiesto: acepta 29/2
       if (form.dia > maximo) { error.value = 'Ese mes tiene ' + maximo + ' días.'; return; }
       const datos = { nombre: form.nombre.trim(), relacion: form.relacion.trim(), dia: Number(form.dia), mes: Number(form.mes), esFamilia: form.esFamilia };
-      if (editando.value) Object.assign(editando.value, datos);
-      else estado.cumples.push({ id: nuevoId(), ...datos });
-      abierta.value = false;
+      guardando.value = true; error.value = '';
+      try {
+        await guardarCumple(editando.value ? editando.value.id : null, datos);
+        abierta.value = false;
+      } catch (e) { error.value = mensajeDeError(e); }
+      finally { guardando.value = false; }
     }
-    function borrar() {
-      const i = estado.cumples.indexOf(editando.value);
-      if (i >= 0) estado.cumples.splice(i, 1);
-      abierta.value = false;
+    async function borrar() {
+      try { await borrarCumple(editando.value.id); abierta.value = false; }
+      catch (e) { error.value = mensajeDeError(e); }
     }
 
-    return { estado, nombreAdulto, puedeEditar, proximo, familia, otros, textoFaltan, fechaCorta, abierta, editando, form, error, abrir, guardar, borrar, NOMBRES_MESES };
+    return { estado, nombreAdulto, puedeEditar, guardando, proximo, familia, otros, textoFaltan, fechaCorta, abierta, editando, form, error, abrir, guardar, borrar, NOMBRES_MESES };
   },
   template: `
     <div class="pantalla">
@@ -124,7 +130,7 @@ export const PantallaCumpleanos = {
             <interruptor v-model="form.esFamilia" etiqueta="Es de la familia" />
           </div>
           <p v-if="error" class="error" role="alert">{{ error }}</p>
-          <button type="submit" class="boton-primario">Guardar</button>
+          <button type="submit" class="boton-primario" :disabled="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
           <button v-if="editando" type="button" class="boton-texto boton-peligro" @click="borrar">Borrar este cumpleaños</button>
         </form>
       </hoja-inferior>

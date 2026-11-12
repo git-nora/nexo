@@ -3,7 +3,7 @@ import { Icono } from '../iconos.js';
 import { Interruptor } from '../componentes/comunes.js';
 import { estado } from '../datos-ejemplo.js';
 import { tema, cambiarTema } from '../tema.js';
-import { cambiarMiNombre, cambiarNombreAdultoMayor, cerrarSesion as salirDeFirebase, mensajeDeError } from '../firebase.js';
+import { cambiarMiNombre, cambiarNombreAdultoMayor, guardarAjustes, cerrarSesion as salirDeFirebase, mensajeDeError } from '../firebase.js';
 
 const { ref } = Vue;
 
@@ -19,7 +19,14 @@ export const PantallaAjustes = {
 
     function cambiarHoras(delta) {
       const h = estado.ajustes.horasInactividad + delta;
-      if (h >= 1 && h <= 24) estado.ajustes.horasInactividad = h;
+      if (h >= 1 && h <= 24) ajustar('horasInactividad', h);
+    }
+    // Cambia un ajuste del dispositivo: se ve al instante y se guarda en Firebase para toda la familia
+    async function ajustar(campo, valor) {
+      if (campo !== 'silencioso' && campo !== 'horasInactividad' && !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(valor)) return;
+      estado.ajustes[campo] = valor;
+      error.value = '';
+      try { await guardarAjustes({ [campo]: valor }); } catch (e) { error.value = mensajeDeError(e); }
     }
     function empezarNombre() { nombreNuevo.value = estado.usuario.nombre; editandoNombre.value = true; }
     async function guardarNombre() {
@@ -42,7 +49,7 @@ export const PantallaAjustes = {
       try { await salirDeFirebase(); } catch (e) { error.value = mensajeDeError(e); }   // app.js lleva a ingreso
     }
 
-    return { estado, tema, cambiarTema, cambiarHoras, editandoNombre, nombreNuevo, empezarNombre, guardarNombre,
+    return { estado, tema, cambiarTema, cambiarHoras, ajustar, editandoNombre, nombreNuevo, empezarNombre, guardarNombre,
              editandoAdulto, adultoNuevo, empezarAdulto, guardarAdulto, error, conectarTelegram, cerrarSesion };
   },
   template: `
@@ -75,7 +82,7 @@ export const PantallaAjustes = {
             <span class="titulo" style="font-weight: 600">Modo silencioso</span>
             <span class="detalle">Solo luz, sin sonido (salvo SOS)</span>
           </div>
-          <interruptor v-model="estado.ajustes.silencioso" etiqueta="Modo silencioso" />
+          <interruptor :model-value="estado.ajustes.silencioso" @update:model-value="(v) => ajustar('silencioso', v)" etiqueta="Modo silencioso" />
         </div>
       </div>
 
@@ -93,9 +100,9 @@ export const PantallaAjustes = {
           <span class="titulo" style="font-weight: 600">Contar solo entre</span>
           <div class="horario">
             <label for="desde" class="detalle">Desde</label>
-            <input id="desde" type="time" v-model="estado.ajustes.desde">
+            <input id="desde" type="time" :value="estado.ajustes.desde" @change="ajustar('desde', $event.target.value)">
             <label for="hasta" class="detalle">hasta</label>
-            <input id="hasta" type="time" v-model="estado.ajustes.hasta">
+            <input id="hasta" type="time" :value="estado.ajustes.hasta" @change="ajustar('hasta', $event.target.value)">
           </div>
           <span class="detalle">Fuera de ese horario no cuenta, para no avisar por las horas de sueño.</span>
         </div>
