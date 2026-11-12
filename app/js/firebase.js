@@ -32,7 +32,8 @@ export function mensajeDeError(e) {
     'auth/user-not-found': 'No hay ninguna cuenta con ese mail. Usá «Crear cuenta».',
     'auth/too-many-requests': 'Hubo muchos intentos seguidos. Esperá unos minutos y probá de nuevo.',
     'auth/network-request-failed': 'No hay conexión a internet. Revisala y probá de nuevo.',
-    'PERMISSION_DENIED': 'No tenés permiso para hacer eso.'
+    'PERMISSION_DENIED': 'No tenés permiso para hacer eso.',
+    'nexo/bloqueado': 'Quien administra esa familia te quitó. Pedile que te deje volver desde Familia.'
   };
   if (e && /PERMISSION_DENIED|permission/i.test(String(e.code) + ' ' + String(e.message))) return textos.PERMISSION_DENIED;
   return textos[e && e.code] || 'Algo salió mal. Probá de nuevo en un momento.';
@@ -74,7 +75,15 @@ export async function unirseAFamilia(codigoEscrito, nombre) {
     };
   }
   cambios['usuarios/' + uid] = { familiaId: fid };
-  await update(ref(db), cambios);
+  try {
+    await update(ref(db), cambios);
+  } catch (e) {
+    // Si la familia ya existe y no te deja entrar, es porque quien la administra te quitó
+    if (existe && mensajeDeError(e) === mensajeDeError({ code: 'PERMISSION_DENIED' })) {
+      throw { code: 'nexo/bloqueado' };
+    }
+    throw e;
+  }
   return { creoLaFamilia: !existe };
 }
 
@@ -94,6 +103,7 @@ function escucharFamilia(fid) {
   }));
   desuscribir.push(onValue(ref(db, 'familias/' + fid + '/miembros'), (s) => {
     const miembros = s.val() || {};
+    if (!miembros[uid]) { salirDeLaFamilia(); return; }          // quien administra te quitó
     estado.miembros = Object.entries(miembros).map(([id, m]) => ({ id, ...m, soyYo: id === uid }))
       .sort((a, b) => (b.admin - a.admin) || a.nombre.localeCompare(b.nombre));
     const yo = miembros[uid] || {};
@@ -101,7 +111,11 @@ function escucharFamilia(fid) {
     estado.usuario.admin = !!yo.admin;
     estado.usuario.puedeEditar = !!yo.puedeEditar;
     estado.usuario.telegram = !!yo.telegram;
-  }));
+  }, () => salirDeLaFamilia()));                                   // sin permiso de lectura = ya no sos integrante
+
+  desuscribir.push(onValue(ref(db, 'familias/' + fid + '/bloqueados'), (s) => {
+    estado.bloqueados = Object.entries(s.val() || {}).map(([id, nombre]) => ({ id, nombre }));
+  }, () => {}));
 
   // Listas: Firebase las guarda como objetos { id: datos }; la app las usa como arreglos
   const lista = (nodo, armar, orden) => desuscribir.push(onValue(ref(db, 'familias/' + fid + '/' + nodo), (s) => {
@@ -129,8 +143,19 @@ function escucharFamilia(fid) {
 // Vacía todo lo de la familia (al cerrar sesión)
 function limpiarFamilia() {
   Object.assign(estado.familia, { codigo: '', adultoMayor: '', dispositivo: '', enLinea: null, ultimoUso: null });
-  for (const k of ['miembros', 'alertas', 'mensajes', 'remedios', 'tomas', 'cumples']) estado[k] = [];
+  for (const k of ['miembros', 'bloqueados', 'alertas', 'mensajes', 'remedios', 'tomas', 'cumples']) estado[k] = [];
   estado.ajustes = { ...AJUSTES_INICIALES };
+}
+
+// Si quien administra te quitó de la familia: se borra el vínculo y vuelve a la pantalla de ingreso
+function salirDeLaFamilia() {
+  if (!estado.familiaId) return;
+  dejarDeEscuchar();
+  turno++;
+  estado.familiaId = '';
+  limpiarFamilia();
+  estado.avisoIngreso = 'Ya no formás parte de esa familia. Si fue un error, pedile a quien la administra que te deje volver.';
+  if (auth.currentUser) remove(ref(db, 'usuarios/' + auth.currentUser.uid)).catch(() => {});
 }
 
 // Cambios que hace la app
@@ -166,6 +191,16 @@ export const borrarMensaje = (id) => remove(ref(db, rutaFamilia('mensajes') + '/
 
 // Alertas: las crea NEXO; la familia las borra cuando ya las atendió
 export const atenderAlerta = (id) => remove(ref(db, rutaFamilia('alertas') + '/' + id));
+
+// --- Solo quien administra ---
+// Quitar: lo saca de la lista y lo bloquea para que no vuelva a entrar con el código
+export async function quitarMiembro(m) {
+  await update(ref(db, 'familias/' + estado.familiaId), { ['miembros/' + m.id]: null, ['bloqueados/' + m.id]: m.nombre });
+}
+export const permitirVolver = (id) => remove(ref(db, rutaFamilia('bloqueados') + '/' + id));
+export const borrarTodosLosMensajes = () => remove(ref(db, rutaFamilia('mensajes')));
+// Historial = mensajes, alertas y registro de tomas (no toca medicación, cumpleaños ni integrantes)
+export const borrarHistorial = () => update(ref(db, 'familias/' + estado.familiaId), { mensajes: null, alertas: null, tomas: null });
 
 // Ajustes del dispositivo (cualquier integrante)
 export const guardarAjustes = (cambios) => update(ref(db, rutaFamilia('ajustes')), cambios);

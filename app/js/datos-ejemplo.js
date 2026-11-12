@@ -21,6 +21,8 @@ export const estado = reactive({
   },
 
   miembros: [],                  // { id, nombre, color, admin, puedeEditar, telegram, soyYo }
+  bloqueados: [],                // { id, nombre }: quitados por quien administra; no pueden volver a sumarse
+  avisoIngreso: '',              // mensaje para la pantalla de ingreso (por ejemplo, si te quitaron de la familia)
   alertas: [],                   // { id, tipo: sos|medicacion|llamada|inactividad, detalle, creado }
   mensajes: [],                  // { id, autor, duracion, creado, escuchado, audio }
   remedios: [],                  // { id, nombre, dosis, horas: ['08:00'], dias: [0..6], aviso: texto|audio|ambos }

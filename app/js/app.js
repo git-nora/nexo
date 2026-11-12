@@ -49,6 +49,8 @@ const App = {
     const conBarra = computed(() => route.path !== '/ingreso');
     // Si la sesión se cierra (desde Ajustes o porque venció), vuelve a ingreso
     watch(() => estado.sesionIniciada, (hay) => { if (!hay && route.path !== '/ingreso') router.push('/ingreso'); });
+    // Si quien administra te quita de la familia, también vuelve a ingreso
+    watch(() => estado.familiaId, (id) => { if (!id && route.path !== '/ingreso') router.push('/ingreso'); });
     return { conBarra };
   },
   template: `
