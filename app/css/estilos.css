@@ -321,3 +321,4 @@ h2.seccion { margin: 0; font-size: 17px; font-weight: 700; }
 
 /* Botón mientras espera a Firebase */
 .boton-primario:disabled { opacity: .6; cursor: progress; }
+.boton-texto:disabled { opacity: .4; cursor: default; }
