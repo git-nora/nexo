@@ -33,6 +33,9 @@ export function mensajeDeError(e) {
     'auth/too-many-requests': 'Hubo muchos intentos seguidos. Esperá unos minutos y probá de nuevo.',
     'auth/network-request-failed': 'No hay conexión a internet. Revisala y probá de nuevo.',
     'PERMISSION_DENIED': 'No tenés permiso para hacer eso.',
+    'nexo/microfono-bloqueado': 'El celular no deja usar el micrófono. Permitilo para esta página en la configuración del navegador y probá de nuevo.',
+    'nexo/sin-microfono': 'No se pudo usar el micrófono de este celular.',
+    'nexo/sin-sonido': 'Este mensaje es de una prueba anterior y no tiene sonido.',
     'nexo/bloqueado': 'Quien administra esa familia te quitó. Pedile que te deje volver desde Familia.'
   };
   if (e && /PERMISSION_DENIED|permission/i.test(String(e.code) + ' ' + String(e.message))) return textos.PERMISSION_DENIED;
@@ -182,12 +185,20 @@ export const borrarRemedio = (id) => remove(ref(db, rutaFamilia('remedios') + '/
 export const guardarCumple = (id, datos) => guardarEn('cumples', id, datos);
 export const borrarCumple = (id) => remove(ref(db, rutaFamilia('cumples') + '/' + id));
 
-// Mensajes de voz. El audio en sí se suma en el paso 5; por ahora se guarda la duración.
-export async function enviarMensaje(duracion) {
-  await set(push(ref(db, rutaFamilia('mensajes'))), { autor: auth.currentUser.uid, duracion, creado: serverTimestamp(), escuchado: false });
+// Mensajes de voz. El sonido (WAV en base64) va aparte, en "audios", para que la lista
+// de mensajes cargue rápido: cada audio se baja recién cuando alguien toca play.
+export async function enviarMensaje(duracion, b64) {
+  const id = push(ref(db, rutaFamilia('mensajes'))).key;
+  await update(ref(db, 'familias/' + estado.familiaId), {
+    ['audios/' + id]: b64,
+    ['mensajes/' + id]: { autor: auth.currentUser.uid, duracion, creado: serverTimestamp(), escuchado: false, audio: 'wav16k' }
+  });
+}
+export async function obtenerAudio(id) {
+  return (await get(ref(db, rutaFamilia('audios') + '/' + id))).val();
 }
 export const marcarEscuchado = (id) => update(ref(db, rutaFamilia('mensajes') + '/' + id), { escuchado: true });
-export const borrarMensaje = (id) => remove(ref(db, rutaFamilia('mensajes') + '/' + id));
+export const borrarMensaje = (id) => update(ref(db, 'familias/' + estado.familiaId), { ['mensajes/' + id]: null, ['audios/' + id]: null });
 
 // Alertas: las crea NEXO; la familia las borra cuando ya las atendió
 export const atenderAlerta = (id) => remove(ref(db, rutaFamilia('alertas') + '/' + id));
@@ -198,9 +209,9 @@ export async function quitarMiembro(m) {
   await update(ref(db, 'familias/' + estado.familiaId), { ['miembros/' + m.id]: null, ['bloqueados/' + m.id]: m.nombre });
 }
 export const permitirVolver = (id) => remove(ref(db, rutaFamilia('bloqueados') + '/' + id));
-export const borrarTodosLosMensajes = () => remove(ref(db, rutaFamilia('mensajes')));
+export const borrarTodosLosMensajes = () => update(ref(db, 'familias/' + estado.familiaId), { mensajes: null, audios: null });
 // Historial = mensajes, alertas y registro de tomas (no toca medicación, cumpleaños ni integrantes)
-export const borrarHistorial = () => update(ref(db, 'familias/' + estado.familiaId), { mensajes: null, alertas: null, tomas: null });
+export const borrarHistorial = () => update(ref(db, 'familias/' + estado.familiaId), { mensajes: null, audios: null, alertas: null, tomas: null });
 
 // Ajustes del dispositivo (cualquier integrante)
 export const guardarAjustes = (cambios) => update(ref(db, rutaFamilia('ajustes')), cambios);
