@@ -1,0 +1,17 @@
+{
+  "name": "NEXO Familia",
+  "short_name": "NEXO",
+  "description": "Mensajes de voz, medicación y avisos de NEXO, el asistente para adultos mayores.",
+  "lang": "es-AR",
+  "start_url": "./#/inicio",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F6F9",
+  "theme_color": "#1F6FB2",
+  "icons": [
+    { "src": "iconos/icono-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "iconos/icono-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "iconos/icono-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
