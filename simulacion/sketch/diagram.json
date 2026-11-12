@@ -1,0 +1,612 @@
+{
+  "version": 1,
+  "author": "Proyecto integrador",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp",
+      "top": -40,
+      "left": 400,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-ili9341",
+      "id": "pantalla",
+      "top": -58.5,
+      "left": 58.5,
+      "rotate": 270,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr",
+      "top": -60,
+      "left": 560,
+      "rotate": 180,
+      "attrs": {
+        "lux": "300"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btnHablar",
+      "top": 60,
+      "left": 600,
+      "attrs": {
+        "color": "white",
+        "label": "HABLAR (mantener)",
+        "key": "h",
+        "bounce": "0"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btnConfirmar",
+      "top": 140,
+      "left": 600,
+      "attrs": {
+        "color": "green",
+        "label": "ESCUCHAR / CONFIRMAR",
+        "key": "v",
+        "bounce": "0"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btnSOS",
+      "top": 220,
+      "left": 600,
+      "attrs": {
+        "color": "red",
+        "label": "SOS (mantener 3 s)",
+        "key": "s",
+        "bounce": "0"
+      }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "buzzer",
+      "top": 250,
+      "left": 300,
+      "attrs": {
+        "volume": "0.2"
+      }
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led0",
+      "top": -32,
+      "left": 10,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led1",
+      "top": -32,
+      "left": 75,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led2",
+      "top": -32,
+      "left": 140,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led3",
+      "top": -32,
+      "left": 205,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led4",
+      "top": -32,
+      "left": 270,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led5",
+      "top": 25,
+      "left": 302,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led6",
+      "top": 80,
+      "left": 302,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led7",
+      "top": 135,
+      "left": 302,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led8",
+      "top": 186,
+      "left": 270,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led9",
+      "top": 186,
+      "left": 205,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led10",
+      "top": 186,
+      "left": 140,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led11",
+      "top": 186,
+      "left": 75,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led12",
+      "top": 186,
+      "left": 10,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led13",
+      "top": 135,
+      "left": -32,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led14",
+      "top": 80,
+      "left": -32,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led15",
+      "top": 25,
+      "left": -32,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "pantalla:VCC",
+      "esp:3V3.1",
+      "orange",
+      []
+    ],
+    [
+      "pantalla:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "pantalla:CS",
+      "esp:10",
+      "blue",
+      []
+    ],
+    [
+      "pantalla:D/C",
+      "esp:9",
+      "blue",
+      []
+    ],
+    [
+      "pantalla:RST",
+      "esp:14",
+      "blue",
+      []
+    ],
+    [
+      "pantalla:MOSI",
+      "esp:11",
+      "blue",
+      []
+    ],
+    [
+      "pantalla:SCK",
+      "esp:12",
+      "blue",
+      []
+    ],
+    [
+      "pantalla:MISO",
+      "esp:13",
+      "blue",
+      []
+    ],
+    [
+      "pantalla:LED",
+      "esp:21",
+      "blue",
+      []
+    ],
+    [
+      "btnHablar:1.l",
+      "esp:39",
+      "gold",
+      []
+    ],
+    [
+      "btnHablar:2.l",
+      "esp:GND.3",
+      "black",
+      []
+    ],
+    [
+      "btnConfirmar:1.l",
+      "esp:40",
+      "gold",
+      []
+    ],
+    [
+      "btnConfirmar:2.l",
+      "esp:GND.3",
+      "black",
+      []
+    ],
+    [
+      "btnSOS:1.l",
+      "esp:41",
+      "gold",
+      []
+    ],
+    [
+      "btnSOS:2.l",
+      "esp:GND.3",
+      "black",
+      []
+    ],
+    [
+      "ldr:VCC",
+      "esp:3V3.2",
+      "orange",
+      []
+    ],
+    [
+      "ldr:GND",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "ldr:AO",
+      "esp:1",
+      "gray",
+      []
+    ],
+    [
+      "buzzer:2",
+      "esp:7",
+      "purple",
+      []
+    ],
+    [
+      "buzzer:1",
+      "esp:GND.4",
+      "black",
+      []
+    ],
+    [
+      "led0:DIN",
+      "esp:42",
+      "white",
+      []
+    ],
+    [
+      "led0:VDD",
+      "esp:5V",
+      "red",
+      []
+    ],
+    [
+      "led0:VSS",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "led0:DOUT",
+      "led1:DIN",
+      "white",
+      []
+    ],
+    [
+      "led0:VDD",
+      "led1:VDD",
+      "red",
+      []
+    ],
+    [
+      "led0:VSS",
+      "led1:VSS",
+      "black",
+      []
+    ],
+    [
+      "led1:DOUT",
+      "led2:DIN",
+      "white",
+      []
+    ],
+    [
+      "led1:VDD",
+      "led2:VDD",
+      "red",
+      []
+    ],
+    [
+      "led1:VSS",
+      "led2:VSS",
+      "black",
+      []
+    ],
+    [
+      "led2:DOUT",
+      "led3:DIN",
+      "white",
+      []
+    ],
+    [
+      "led2:VDD",
+      "led3:VDD",
+      "red",
+      []
+    ],
+    [
+      "led2:VSS",
+      "led3:VSS",
+      "black",
+      []
+    ],
+    [
+      "led3:DOUT",
+      "led4:DIN",
+      "white",
+      []
+    ],
+    [
+      "led3:VDD",
+      "led4:VDD",
+      "red",
+      []
+    ],
+    [
+      "led3:VSS",
+      "led4:VSS",
+      "black",
+      []
+    ],
+    [
+      "led4:DOUT",
+      "led5:DIN",
+      "white",
+      []
+    ],
+    [
+      "led4:VDD",
+      "led5:VDD",
+      "red",
+      []
+    ],
+    [
+      "led4:VSS",
+      "led5:VSS",
+      "black",
+      []
+    ],
+    [
+      "led5:DOUT",
+      "led6:DIN",
+      "white",
+      []
+    ],
+    [
+      "led5:VDD",
+      "led6:VDD",
+      "red",
+      []
+    ],
+    [
+      "led5:VSS",
+      "led6:VSS",
+      "black",
+      []
+    ],
+    [
+      "led6:DOUT",
+      "led7:DIN",
+      "white",
+      []
+    ],
+    [
+      "led6:VDD",
+      "led7:VDD",
+      "red",
+      []
+    ],
+    [
+      "led6:VSS",
+      "led7:VSS",
+      "black",
+      []
+    ],
+    [
+      "led7:DOUT",
+      "led8:DIN",
+      "white",
+      []
+    ],
+    [
+      "led7:VDD",
+      "led8:VDD",
+      "red",
+      []
+    ],
+    [
+      "led7:VSS",
+      "led8:VSS",
+      "black",
+      []
+    ],
+    [
+      "led8:DOUT",
+      "led9:DIN",
+      "white",
+      []
+    ],
+    [
+      "led8:VDD",
+      "led9:VDD",
+      "red",
+      []
+    ],
+    [
+      "led8:VSS",
+      "led9:VSS",
+      "black",
+      []
+    ],
+    [
+      "led9:DOUT",
+      "led10:DIN",
+      "white",
+      []
+    ],
+    [
+      "led9:VDD",
+      "led10:VDD",
+      "red",
+      []
+    ],
+    [
+      "led9:VSS",
+      "led10:VSS",
+      "black",
+      []
+    ],
+    [
+      "led10:DOUT",
+      "led11:DIN",
+      "white",
+      []
+    ],
+    [
+      "led10:VDD",
+      "led11:VDD",
+      "red",
+      []
+    ],
+    [
+      "led10:VSS",
+      "led11:VSS",
+      "black",
+      []
+    ],
+    [
+      "led11:DOUT",
+      "led12:DIN",
+      "white",
+      []
+    ],
+    [
+      "led11:VDD",
+      "led12:VDD",
+      "red",
+      []
+    ],
+    [
+      "led11:VSS",
+      "led12:VSS",
+      "black",
+      []
+    ],
+    [
+      "led12:DOUT",
+      "led13:DIN",
+      "white",
+      []
+    ],
+    [
+      "led12:VDD",
+      "led13:VDD",
+      "red",
+      []
+    ],
+    [
+      "led12:VSS",
+      "led13:VSS",
+      "black",
+      []
+    ],
+    [
+      "led13:DOUT",
+      "led14:DIN",
+      "white",
+      []
+    ],
+    [
+      "led13:VDD",
+      "led14:VDD",
+      "red",
+      []
+    ],
+    [
+      "led13:VSS",
+      "led14:VSS",
+      "black",
+      []
+    ],
+    [
+      "led14:DOUT",
+      "led15:DIN",
+      "white",
+      []
+    ],
+    [
+      "led14:VDD",
+      "led15:VDD",
+      "red",
+      []
+    ],
+    [
+      "led14:VSS",
+      "led15:VSS",
+      "black",
+      []
+    ]
+  ],
+  "dependencies": {}
+}
