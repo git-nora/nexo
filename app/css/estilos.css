@@ -318,3 +318,6 @@ h2.seccion { margin: 0; font-size: 17px; font-weight: 700; }
 .contador output { min-width: 72px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
 .horario { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .horario input { height: 44px; border-radius: 12px; padding: 0 10px; border: 1.5px solid var(--borde); background: var(--fondo); }
+
+/* Botón mientras espera a Firebase */
+.boton-primario:disabled { opacity: .6; cursor: progress; }
