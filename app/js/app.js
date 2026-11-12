@@ -3,6 +3,7 @@ import { Icono } from './iconos.js';
 import { BarraNavegacion } from './componentes/comunes.js';
 import { estado } from './datos-ejemplo.js';
 import { aplicarTema } from './tema.js';
+import { vigilarSesion } from './firebase.js';
 import { PantallaIngreso } from './pantallas/ingreso.js';
 import { PantallaInicio } from './pantallas/inicio.js';
 import { PantallaMensajes } from './pantallas/mensajes.js';
@@ -12,7 +13,7 @@ import { PantallaMas } from './pantallas/mas.js';
 import { PantallaFamilia } from './pantallas/familia.js';
 import { PantallaAjustes } from './pantallas/ajustes.js';
 
-const { createApp, computed } = Vue;
+const { createApp, computed, watch } = Vue;
 
 // Rutas: cada pantalla tiene su dirección (#/inicio, #/mensajes, ...)
 const router = VueRouter.createRouter({
@@ -32,10 +33,11 @@ const router = VueRouter.createRouter({
   scrollBehavior: () => ({ top: 0 })
 });
 
-// Sin sesión iniciada solo se puede ver la pantalla de ingreso
+// Sin sesión, o con sesión pero sin familia, solo se puede ver la pantalla de ingreso
+const puedeEntrar = () => estado.sesionIniciada && !!estado.familiaId;
 router.beforeEach((destino) => {
-  if (!estado.sesionIniciada && destino.path !== '/ingreso') return '/ingreso';
-  if (estado.sesionIniciada && destino.path === '/ingreso') return '/inicio';
+  if (!puedeEntrar() && destino.path !== '/ingreso') return '/ingreso';
+  if (puedeEntrar() && destino.path === '/ingreso') return '/inicio';
   return true;
 });
 
@@ -43,7 +45,10 @@ const App = {
   components: { BarraNavegacion, Icono },
   setup() {
     const route = VueRouter.useRoute();
+    const router = VueRouter.useRouter();
     const conBarra = computed(() => route.path !== '/ingreso');
+    // Si la sesión se cierra (desde Ajustes o porque venció), vuelve a ingreso
+    watch(() => estado.sesionIniciada, (hay) => { if (!hay && route.path !== '/ingreso') router.push('/ingreso'); });
     return { conBarra };
   },
   template: `
@@ -54,7 +59,10 @@ const App = {
 };
 
 aplicarTema();
-createApp(App).component('icono', Icono).use(router).mount('#app');
+// Espera a saber si hay una sesión guardada antes de mostrar la app
+vigilarSesion(() => {
+  createApp(App).component('icono', Icono).use(router).mount('#app');
+});
 
 // Instalar como app: registra el service worker (solo funciona en https o localhost)
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {

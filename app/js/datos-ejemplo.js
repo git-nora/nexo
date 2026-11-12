@@ -1,18 +1,21 @@
-// Datos de EJEMPLO para el paso 1 (diseño y navegación).
-// En el paso 4 todo esto se reemplaza por los datos reales de Firebase.
+// Estado de la app. Desde el paso 2, la cuenta, la familia y sus integrantes
+// vienen de Firebase (ver firebase.js). Lo marcado como EJEMPLO se reemplaza en los pasos 4 y 5.
 const { reactive } = Vue;
 
 export const estado = reactive({
   sesionIniciada: false,
+  familiaId: '',                 // vacío = la cuenta todavía no se unió a una familia
 
-  usuario: { nombre: 'Mamá', mail: '', admin: true, puedeEditar: true, telegram: true },
+  usuario: { nombre: '', mail: '', admin: false, puedeEditar: false, telegram: false },
 
   familia: {
-    codigo: '4F7K-2Q',
-    adultoMayor: 'Abuela',
-    enLinea: true,
-    ultimoUso: 'hace 12 min'
+    codigo: '',
+    adultoMayor: '',             // nombre de quien usa NEXO (lo pone el administrador)
+    enLinea: null,               // null = el dispositivo todavía no se conectó (se suma al final)
+    ultimoUso: ''
   },
+
+  // EJEMPLO desde acá
 
   // tipo: sos | medicacion | llamada | inactividad
   alertas: [
@@ -49,12 +52,7 @@ export const estado = reactive({
     { id: 4, nombre: 'Dr. Pérez', relacion: 'Médico de cabecera', dia: 8, mes: 3, esFamilia: false }
   ],
 
-  miembros: [
-    { id: 1, nombre: 'Mamá', color: '#1F6FB2', telegram: true, admin: true, puedeEditar: true, soyYo: true },
-    { id: 2, nombre: 'Carlos', color: '#7A4FB0', telegram: true, admin: false, puedeEditar: true },
-    { id: 3, nombre: 'Sofía', color: '#B5307A', telegram: false, admin: false, puedeEditar: false },
-    { id: 4, nombre: 'Abuelo', color: '#2E7D5B', telegram: true, admin: false, puedeEditar: false }
-  ],
+  miembros: [],                  // integrantes reales, vienen de Firebase
 
   ajustes: { silencioso: false, horasInactividad: 6, desde: '08:00', hasta: '22:00' }
 });
@@ -62,6 +60,9 @@ export const estado = reactive({
 // Número nuevo para identificar lo que se agrega en el paso 1
 let ultimoId = 100;
 export function nuevoId() { ultimoId += 1; return ultimoId; }
+
+// Nombre para mostrar de quien usa NEXO
+export function nombreAdulto() { return estado.familia.adultoMayor || 'tu familiar'; }
 
 export const NOMBRES_DIAS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 export const NOMBRES_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
