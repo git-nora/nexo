@@ -1,0 +1,43 @@
+{
+  "rules": {
+    "codigos": {
+      "$codigo": {
+        ".read": "auth != null",
+        ".write": "auth != null && !data.exists() && newData.child('admin').val() === auth.uid"
+      }
+    },
+    "usuarios": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "familias": {
+      "$fid": {
+        ".read": "auth != null && root.child('familias').child($fid).child('miembros').child(auth.uid).exists()",
+        "info": {
+          ".write": "auth != null && ((!data.exists() && newData.child('admin').val() === auth.uid) || data.child('admin').val() === auth.uid)",
+          "admin": { ".validate": "!data.exists() || newData.val() === data.val()" }
+        },
+        "miembros": {
+          "$uid": {
+            ".write": "auth != null && (auth.uid === $uid || root.child('familias').child($fid).child('info').child('admin').val() === auth.uid)",
+            ".validate": "newData.hasChildren(['nombre', 'admin', 'puedeEditar'])",
+            "nombre": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30" },
+            "admin": { ".validate": "newData.val() === (newData.parent().parent().parent().child('info').child('admin').val() === $uid)" },
+            "puedeEditar": { ".validate": "newData.isBoolean() && (newData.val() === data.val() || (!data.exists() && (newData.val() === false || newData.parent().child('admin').val() === true)) || newData.parent().parent().parent().child('info').child('admin').val() === auth.uid)" }
+          }
+        },
+        "remedios": {
+          ".write": "auth != null && (root.child('familias').child($fid).child('info').child('admin').val() === auth.uid || root.child('familias').child($fid).child('miembros').child(auth.uid).child('puedeEditar').val() === true)"
+        },
+        "cumples": {
+          ".write": "auth != null && (root.child('familias').child($fid).child('info').child('admin').val() === auth.uid || root.child('familias').child($fid).child('miembros').child(auth.uid).child('puedeEditar').val() === true)"
+        },
+        "$otro": {
+          ".write": "auth != null && root.child('familias').child($fid).child('miembros').child(auth.uid).exists()"
+        }
+      }
+    }
+  }
+}
