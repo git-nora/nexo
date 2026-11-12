@@ -3,6 +3,7 @@ import { Icono } from '../iconos.js';
 import { Interruptor } from '../componentes/comunes.js';
 import { estado } from '../datos-ejemplo.js';
 import { tema, cambiarTema } from '../tema.js';
+import { cambiarMiNombre, cambiarNombreAdultoMayor, cerrarSesion as salirDeFirebase, mensajeDeError } from '../firebase.js';
 
 const { ref } = Vue;
 
@@ -10,24 +11,39 @@ export const PantallaAjustes = {
   name: 'PantallaAjustes',
   components: { Icono, Interruptor },
   setup() {
-    const router = VueRouter.useRouter();
     const editandoNombre = ref(false);
     const nombreNuevo = ref('');
+    const editandoAdulto = ref(false);
+    const adultoNuevo = ref('');
+    const error = ref('');
 
     function cambiarHoras(delta) {
       const h = estado.ajustes.horasInactividad + delta;
       if (h >= 1 && h <= 24) estado.ajustes.horasInactividad = h;
     }
     function empezarNombre() { nombreNuevo.value = estado.usuario.nombre; editandoNombre.value = true; }
-    function guardarNombre() {
-      if (nombreNuevo.value.trim()) estado.usuario.nombre = nombreNuevo.value.trim();
-      editandoNombre.value = false;
+    async function guardarNombre() {
+      const n = nombreNuevo.value.trim();
+      editandoNombre.value = false; error.value = '';
+      if (!n || n === estado.usuario.nombre) return;
+      try { await cambiarMiNombre(n); } catch (e) { error.value = mensajeDeError(e); }
+    }
+    // Solo quien administra pone el nombre de quien usa NEXO (aparece en los títulos)
+    function empezarAdulto() { adultoNuevo.value = estado.familia.adultoMayor; editandoAdulto.value = true; }
+    async function guardarAdulto() {
+      const n = adultoNuevo.value.trim();
+      editandoAdulto.value = false; error.value = '';
+      if (n === estado.familia.adultoMayor) return;
+      try { await cambiarNombreAdultoMayor(n); } catch (e) { error.value = mensajeDeError(e); }
     }
     // Paso 1: simula la conexión. En el paso 4 abre el bot de Telegram de NEXO.
     function conectarTelegram() { estado.usuario.telegram = !estado.usuario.telegram; }
-    function cerrarSesion() { estado.sesionIniciada = false; router.push('/ingreso'); }
+    async function cerrarSesion() {
+      try { await salirDeFirebase(); } catch (e) { error.value = mensajeDeError(e); }   // app.js lleva a ingreso
+    }
 
-    return { estado, tema, cambiarTema, cambiarHoras, editandoNombre, nombreNuevo, empezarNombre, guardarNombre, conectarTelegram, cerrarSesion };
+    return { estado, tema, cambiarTema, cambiarHoras, editandoNombre, nombreNuevo, empezarNombre, guardarNombre,
+             editandoAdulto, adultoNuevo, empezarAdulto, guardarAdulto, error, conectarTelegram, cerrarSesion };
   },
   template: `
     <div class="pantalla">
@@ -37,6 +53,19 @@ export const PantallaAjustes = {
 
       <div class="etiqueta-seccion">Dispositivo</div>
       <div class="lista">
+        <div class="fila">
+          <div class="texto">
+            <span class="titulo" style="font-weight: 600">Quién usa NEXO</span>
+            <span v-if="!estado.usuario.admin" class="detalle">Lo cambia quien administra la familia</span>
+          </div>
+          <form v-if="editandoAdulto" @submit.prevent="guardarAdulto" style="display: flex; gap: 8px; align-items: center">
+            <label for="nombre-adulto" class="detalle" style="position: absolute; left: -9999px">Nombre de quien usa NEXO</label>
+            <input id="nombre-adulto" type="text" placeholder="Ej.: la Abuela" v-model="adultoNuevo" style="width: 130px; height: 44px; border-radius: 12px; padding: 0 10px; border: 1.5px solid var(--borde); background: var(--fondo)">
+            <button type="submit" class="boton-texto">Listo</button>
+          </form>
+          <button v-else-if="estado.usuario.admin" type="button" class="boton-texto" @click="empezarAdulto">{{ estado.familia.adultoMayor || 'Poner nombre' }} ›</button>
+          <span v-else class="detalle" style="font-size: 15px">{{ estado.familia.adultoMayor || 'Sin nombre' }}</span>
+        </div>
         <div class="fila">
           <div class="texto"><span class="titulo" style="font-weight: 600">Perfil</span></div>
           <span class="detalle" style="font-size: 15px">Adulto mayor</span>
@@ -91,6 +120,10 @@ export const PantallaAjustes = {
           <button v-else type="button" class="boton-texto" @click="empezarNombre">{{ estado.usuario.nombre }} ›</button>
         </div>
         <div class="fila">
+          <div class="texto"><span class="titulo" style="font-weight: 600">Cuenta</span></div>
+          <span class="detalle" style="font-size: 14px; overflow-wrap: anywhere">{{ estado.usuario.mail }}</span>
+        </div>
+        <div class="fila">
           <div class="texto">
             <span class="titulo" style="font-weight: 600">Telegram para avisos</span>
             <span class="detalle">{{ estado.usuario.telegram ? 'Te llegan los avisos urgentes' : 'Conectalo para recibir SOS y alertas' }}</span>
@@ -101,5 +134,6 @@ export const PantallaAjustes = {
         </div>
         <button type="button" class="boton-texto boton-peligro" style="width: 100%; min-height: 52px" @click="cerrarSesion">Cerrar sesión</button>
       </div>
+      <p v-if="error" class="error" role="alert">{{ error }}</p>
     </div>`
 };

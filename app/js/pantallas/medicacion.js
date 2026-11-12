@@ -2,7 +2,7 @@
 // Solo pueden agregar o editar el administrador y quienes él habilite.
 import { Icono } from '../iconos.js';
 import { HojaInferior } from '../componentes/comunes.js';
-import { estado, nuevoId, NOMBRES_DIAS } from '../datos-ejemplo.js';
+import { estado, nuevoId, nombreAdulto, NOMBRES_DIAS } from '../datos-ejemplo.js';
 
 const { ref, reactive, computed } = Vue;
 
@@ -53,13 +53,13 @@ export const PantallaMedicacion = {
       abierta.value = false;
     }
 
-    return { estado, puedeEditar, abierta, editando, form, error, abrir, alternarDia, guardar, borrar, textoDias, TEXTO_AVISO, NOMBRES_DIAS };
+    return { estado, nombreAdulto, puedeEditar, abierta, editando, form, error, abrir, alternarDia, guardar, borrar, textoDias, TEXTO_AVISO, NOMBRES_DIAS };
   },
   template: `
     <div class="pantalla">
       <div class="encabezado">
         <div>
-          <div class="sobre">De la {{ estado.familia.adultoMayor }}</div>
+          <div class="sobre">De {{ nombreAdulto() }}</div>
           <h1>Medicación</h1>
         </div>
         <button v-if="puedeEditar" type="button" class="boton-agregar" @click="abrir()">

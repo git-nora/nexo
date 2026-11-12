@@ -2,7 +2,7 @@
 // Paso 1: la grabación y la reproducción se simulan (se ve el tiempo y la onda).
 // En el paso 5 se graba con el micrófono del celular y se guarda en Firebase.
 import { Icono } from '../iconos.js';
-import { estado, nuevoId } from '../datos-ejemplo.js';
+import { estado, nuevoId, nombreAdulto } from '../datos-ejemplo.js';
 
 const { ref, onBeforeUnmount } = Vue;
 
@@ -40,14 +40,14 @@ export const PantallaMensajes = {
     }
     onBeforeUnmount(() => { clearInterval(reloj); clearTimeout(finSonido); });
 
-    return { estado, grabando, segundos, sonando, empezar, terminar, escuchar, onda, minutos };
+    return { estado, nombreAdulto, grabando, segundos, sonando, empezar, terminar, escuchar, onda, minutos };
   },
   template: `
     <div class="pantalla mensajes-pantalla">
       <div class="encabezado">
         <div>
           <div class="sobre">Mensajes con</div>
-          <h1>{{ estado.familia.adultoMayor }}</h1>
+          <h1>{{ nombreAdulto() }}</h1>
         </div>
       </div>
 

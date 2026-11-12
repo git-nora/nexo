@@ -1,6 +1,6 @@
 // Pantalla de inicio: estado del dispositivo, alertas y accesos rápidos.
 import { Icono } from '../iconos.js';
-import { estado } from '../datos-ejemplo.js';
+import { estado, nombreAdulto } from '../datos-ejemplo.js';
 import { tema, cambiarTema } from '../tema.js';
 
 // Cada tipo de alerta usa el mismo color que el halo de NEXO
@@ -22,14 +22,14 @@ export const PantallaInicio = {
       { ruta: '/cumpleanos', texto: 'Cumpleaños', icono: 'torta' },
       { ruta: '/familia', texto: 'Familia', icono: 'familia' }
     ];
-    return { estado, tema, alternarTema, accesos, ESTILO_ALERTA };
+    return { estado, nombreAdulto, tema, alternarTema, accesos, ESTILO_ALERTA };
   },
   template: `
     <div class="pantalla">
       <div class="encabezado">
         <div>
           <div class="sobre">Hola, {{ estado.usuario.nombre }}</div>
-          <h1>NEXO de la {{ estado.familia.adultoMayor }}</h1>
+          <h1>{{ estado.familia.adultoMayor ? 'NEXO de ' + estado.familia.adultoMayor : 'Tu NEXO' }}</h1>
         </div>
         <button type="button" class="boton-icono" @click="alternarTema"
                 :aria-label="tema.modo === 'oscuro' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
@@ -39,13 +39,17 @@ export const PantallaInicio = {
 
       <div class="tarjeta estado">
         <div class="punto" :class="{ apagado: !estado.familia.enLinea }"></div>
-        <div>
+        <div v-if="estado.familia.enLinea === null">
+          <div style="font-size: 16px; font-weight: 700">Esperando al dispositivo</div>
+          <div class="nota" style="font-size: 14px">NEXO todavía no se conectó a esta familia.</div>
+        </div>
+        <div v-else>
           <div style="font-size: 16px; font-weight: 700">{{ estado.familia.enLinea ? 'En línea' : 'Sin conexión' }}</div>
           <div class="nota" style="font-size: 14px">Último uso: {{ estado.familia.ultimoUso }}</div>
         </div>
       </div>
 
-      <h2 class="seccion">Alertas</h2>
+      <h2 class="seccion">Alertas <span class="chip" style="vertical-align: middle">ejemplo</span></h2>
       <div class="lista">
         <div v-for="a in estado.alertas" :key="a.id" class="fila">
           <div class="circulo-icono" :style="{ color: ESTILO_ALERTA[a.tipo].color, background: ESTILO_ALERTA[a.tipo].fondo }">

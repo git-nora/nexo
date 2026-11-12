@@ -1,7 +1,7 @@
 // Cumpleaños: el próximo arriba, después familia y otras personas.
 import { Icono } from '../iconos.js';
 import { HojaInferior, Interruptor } from '../componentes/comunes.js';
-import { estado, nuevoId, NOMBRES_MESES } from '../datos-ejemplo.js';
+import { estado, nuevoId, nombreAdulto, NOMBRES_MESES } from '../datos-ejemplo.js';
 
 const { ref, reactive, computed } = Vue;
 
@@ -51,7 +51,7 @@ export const PantallaCumpleanos = {
       abierta.value = false;
     }
 
-    return { estado, puedeEditar, proximo, familia, otros, textoFaltan, fechaCorta, abierta, editando, form, error, abrir, guardar, borrar, NOMBRES_MESES };
+    return { estado, nombreAdulto, puedeEditar, proximo, familia, otros, textoFaltan, fechaCorta, abierta, editando, form, error, abrir, guardar, borrar, NOMBRES_MESES };
   },
   template: `
     <div class="pantalla">
@@ -99,7 +99,7 @@ export const PantallaCumpleanos = {
             <input id="cum-nombre" type="text" placeholder="Ej.: Sofía" v-model="form.nombre">
           </div>
           <div class="campo">
-            <label for="cum-relacion">¿Quién es para la {{ estado.familia.adultoMayor }}?</label>
+            <label for="cum-relacion">¿Quién es para {{ nombreAdulto() }}?</label>
             <input id="cum-relacion" type="text" placeholder="Ej.: Nieta, vecina, médico" v-model="form.relacion">
           </div>
           <div class="dos-columnas">

@@ -3,6 +3,7 @@
 import { Icono } from '../iconos.js';
 import { Interruptor } from '../componentes/comunes.js';
 import { estado } from '../datos-ejemplo.js';
+import { cambiarPermiso, mensajeDeError } from '../firebase.js';
 
 const { ref } = Vue;
 
@@ -11,8 +12,14 @@ export const PantallaFamilia = {
   components: { Icono, Interruptor },
   setup() {
     const copiado = ref('');
+    const error = ref('');
+    async function permiso(m, valor) {
+      error.value = '';
+      try { await cambiarPermiso(m.id, valor); } catch (e) { error.value = mensajeDeError(e); }
+    }
     async function compartir() {
-      const texto = 'Sumate a NEXO de la ' + estado.familia.adultoMayor + ' con este código: ' + estado.familia.codigo;
+      const de = estado.familia.adultoMayor ? ' de ' + estado.familia.adultoMayor : '';
+      const texto = 'Sumate a NEXO' + de + '. Instalá la app desde ' + location.href.split('#')[0] + ' y usá el código ' + estado.familia.codigo;
       try {
         await navigator.clipboard.writeText(texto);
         copiado.value = 'Código copiado. Pegalo en un mensaje para tu familiar.';
@@ -20,7 +27,7 @@ export const PantallaFamilia = {
         copiado.value = 'No se pudo copiar solo. Anotá el código: ' + estado.familia.codigo;
       }
     }
-    return { estado, copiado, compartir };
+    return { estado, copiado, error, permiso, compartir };
   },
   template: `
     <div class="pantalla">
@@ -52,10 +59,13 @@ export const PantallaFamilia = {
           </div>
           <div v-if="estado.usuario.admin && !m.admin" class="permiso">
             <span>Puede editar medicación y cumpleaños</span>
-            <interruptor v-model="m.puedeEditar" :etiqueta="'Permitir a ' + m.nombre + ' editar medicación y cumpleaños'" />
+            <interruptor :model-value="!!m.puedeEditar" @update:model-value="(v) => permiso(m, v)"
+                         :etiqueta="'Permitir a ' + m.nombre + ' editar medicación y cumpleaños'" />
           </div>
         </div>
       </div>
+      <p v-if="error" class="error" role="alert">{{ error }}</p>
+      <p v-if="estado.miembros.length === 1" class="nota">Por ahora sos la única persona. Compartí el código para que se sumen.</p>
       <p class="nota">
         <template v-if="estado.usuario.admin">Solo vos, como quien administra, ves los permisos. </template>
         El color es el que usa cada nombre en NEXO. Para recibir avisos urgentes, cada familiar conecta su Telegram desde Ajustes.
